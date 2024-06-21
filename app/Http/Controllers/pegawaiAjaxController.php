@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\pegawai;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use Yajra\DataTables\Facades\DataTables;
 
 class pegawaiAjaxController extends Controller
@@ -19,7 +20,7 @@ class pegawaiAjaxController extends Controller
         return DataTables::of($data)
         ->addIndexColumn()
         ->addColumn('aksi', function($data){
-            return view('pegawai.tombol');
+            return view('pegawai.tombol')->with('data',$data);
         })
         ->make(true);
     }
@@ -42,7 +43,29 @@ class pegawaiAjaxController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $validasi = Validator::make($request->all(), [
+            'nama' => 'required',
+            'email' => 'required|email'
+        ],[
+            'nama.required' => 'Nama wajib di isi',
+            'email.required' => 'Email wajib di isi',
+            'email.email' => 'Format email salah',
+        ]);
+
+        if($validasi->fails()){
+            return response()->json(['errors' => $validasi->errors()]);
+        }else{
+
+            $data = [
+                'nama' => $request->nama,
+                'email' => $request->email
+            ];
+    
+            pegawai::create($data);
+    
+            return response()->json(['success' => 'Berhasil menyimpan data']);
+
+        }
     }
 
     /**
@@ -54,6 +77,7 @@ class pegawaiAjaxController extends Controller
     public function show($id)
     {
         //
+       
     }
 
     /**
@@ -65,6 +89,8 @@ class pegawaiAjaxController extends Controller
     public function edit($id)
     {
         //
+        $data = pegawai::where('id', $id)->first();
+        return response()->json(['result'=>$data]);
     }
 
     /**
@@ -76,7 +102,29 @@ class pegawaiAjaxController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        $validasi = Validator::make($request->all(), [
+            'nama' => 'required',
+            'email' => 'required|email'
+        ],[
+            'nama.required' => 'Nama wajib di isi',
+            'email.required' => 'Email wajib di isi',
+            'email.email' => 'Format email salah',
+        ]);
+
+        if($validasi->fails()){
+            return response()->json(['errors' => $validasi->errors()]);
+        }else{
+
+            $data = [
+                'nama' => $request->nama,
+                'email' => $request->email
+            ];
+    
+            pegawai::where('id', $id)->update($data);
+    
+            return response()->json(['success' => 'Berhasil mengupdate data']);
+
+        }
     }
 
     /**
@@ -87,6 +135,12 @@ class pegawaiAjaxController extends Controller
      */
     public function destroy($id)
     {
-        //
+        try {
+            $pegawai = Pegawai::findOrFail($id);
+            $pegawai->delete();
+            return response()->json(['success' => 'Data pegawai berhasil dihapus']);
+        } catch (\Exception $e) {
+            return response()->json(['errors' => 'Gagal menghapus data pegawai']);
+        }
     }
 }
